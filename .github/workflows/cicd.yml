@@ -19,11 +19,11 @@ jobs:
       # 2. Check SQL files exist
       - name: Verify SQL files
         run: |
-          if [ ! -f sql/cleaning.sql ]; then
+          if [ ! -f cleaning.sql ]; then
             echo "ERROR: cleaning.sql not found!"
             exit 1
           fi
-          if [ ! -f sql/profiling.sql ]; then
+          if [ ! -f profiling.sql ]; then
             echo "ERROR: profiling.sql not found!"
             exit 1
           fi
