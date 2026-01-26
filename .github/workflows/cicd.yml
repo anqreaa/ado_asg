@@ -38,4 +38,7 @@ jobs:
 
       # 4. Deployment simulation
       - name: Deployment simulation
-        run: echo "CI/CD workflow passed: SQL scripts are ready for deployment."
+        run: |
+          echo "CI/CD workflow passed: SQL scripts are ready for deployment."
+
+
