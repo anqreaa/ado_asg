@@ -1,0 +1,52 @@
+name: SQL CI/CD Pipeline
+
+# Trigger pipeline on push, pull request, or manual trigger
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  sql_pipeline:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout repository so workflow can access files
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install SQLFluff to check SQL syntax
+      - name: Install SQLFluff
+        run: |
+          python -m pip install --upgrade pip
+          pip install sqlfluff
+
+      # Step 3: Configure SQLFluff dialect (Snowflake)
+      - name: Configure SQLFluff
+        run: |
+          echo "[sqlfluff]" > .sqlfluff
+          echo "dialect = snowflake" >> .sqlfluff
+          cat .sqlfluff
+
+      # Step 4: Continuous Integration (CI) - Lint SQL files
+      - name: Lint SQL files
+        run: |
+          echo "Running CI: Checking SQL syntax..."
+          sqlfluff lint profiling.sql
+          sqlfluff lint cleaning.sql
+          echo "SQL files passed CI ✅"
+
+      # Step 5: Continuous Deployment (CD) - Simulate deployment
+      - name: Simulate Deployment
+        run: |
+          echo "Running CD: Simulating deployment..."
+          mkdir -p deployed_sql
+          cp profiling.sql deployed_sql/
+          cp cleaning.sql deployed_sql/
+          echo "SQL files are deployed to deployed_sql folder ✅"
+
+      # Step 6: Show deployed files for verification
+      - name: Verify deployed files
+        run: ls deployed_sql/
