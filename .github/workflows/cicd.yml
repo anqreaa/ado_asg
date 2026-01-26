@@ -1,4 +1,4 @@
-name: SQL CI/CD Simulation
+name: SQL CI/CD Pipeline
 
 on:
   push:
@@ -8,15 +8,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  sql-ci:
+  ci-cd:
     runs-on: ubuntu-latest
+    name: Run SQL CI/CD on Snowflake
 
     steps:
-      # 1. Checkout your repository
-      - name: Checkout repository
+      # Step 1: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 2. Check SQL files exist
+      # Step 2: Verify SQL files exist
       - name: Verify SQL files
         run: |
           if [ ! -f cleaning.sql ]; then
@@ -29,16 +30,29 @@ jobs:
           fi
           echo "All SQL files exist."
 
-      # 3. Simulate running SQL scripts
-      - name: Simulate execution
+      # Step 3: Install SnowSQL
+      - name: Install SnowSQL
         run: |
-          echo "Simulating execution of cleaning.sql..."
-          echo "Simulating execution of profiling.sql..."
-          echo "SQL CI/CD simulation successful."
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2.24/linux_x86_64/snowsql-1.2.24-linux_x86_64.bash
+          bash snowsql-1.2.24-linux_x86_64.bash
 
-      # 4. Deployment simulation
-      - name: Deployment simulation
+      # Step 4: Run SQL scripts on Snowflake
+      - name: Execute SQL Scripts
+        env:
+          SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PWD }}
+          SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+          SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
         run: |
-          echo "CI/CD workflow passed: SQL scripts are ready for deployment."
+          echo "Running cleaning.sql..."
+          snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
+            -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f cleaning.sql
+          
+          echo "Running profiling.sql..."
+          snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
+            -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f profiling.sql
 
-
+      # Step 5: Deployment confirmation
+      - name: Deployment Status
+        run: echo "CI/CD pipeline completed successfully."
