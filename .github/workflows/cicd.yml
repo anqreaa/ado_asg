@@ -17,53 +17,37 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # Step 2: Verify SQL files exist
-      - name: Verify SQL files
+      # Step 2: Install SnowSQL CLI
+      - name: Install SnowSQL CLI
         run: |
-          if ls *.sql 1> /dev/null 2>&1; then
-            echo "SQL files found:"
-            ls *.sql
-          else
-            echo "ERROR: No SQL files found!"
-            exit 1
-          fi
+          python3 -m pip install --upgrade pip
+          pip install snowflake-cli
+          # Add SnowSQL to PATH for future steps
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # Step 3: Install SnowSQL (OFFICIAL installer)
-      - name: Install SnowSQL
-        run: |
-          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.31-linux_x86_64.tar.gz
-          tar -xzf snowsql-1.2.31-linux_x86_64.tar.gz
-          sudo mkdir -p /usr/local/snowsql
-          sudo mv snowsql-1.2.31-linux_x86_64/* /usr/local/snowsql
-          sudo ln -s /usr/local/snowsql/snowsql /usr/local/bin/snowsql
-
-      # Step 4: Verify SnowSQL installation
+      # Step 3: Verify SnowSQL installation
       - name: Verify SnowSQL
-        run: |
-          which snowsql
-          snowsql -v
+        run: snowsql -v
 
-      # Step 5: Execute all SQL scripts
-      - name: Execute SQL Scripts
+      # Step 4: Execute all SQL scripts dynamically using key-pair login
+      - name: Run SQL Scripts on Snowflake
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
-          SNOWSQL_PWD: ${{ secrets.SNOWFLAKE_PWD }}
+          SNOWSQL_PRIVATE_KEY_PATH: ${{ secrets.SNOWSQL_PRIVATE_KEY_PATH }}
+          SNOWSQL_PRIVATE_KEY_PASSPHRASE: ${{ secrets.SNOWSQL_PRIVATE_KEY_PASSPHRASE }}
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
         run: |
           for sql_file in *.sql; do
             echo "Running $sql_file..."
-            snowsql \
-              -a "$SNOWSQL_ACCOUNT" \
-              -u "$SNOWSQL_USER" \
-              -p "$SNOWSQL_PWD" \
-              -r "$SNOWSQL_ROLE" \
-              -w "$SNOWSQL_WAREHOUSE" \
-              -o exit_on_error=true \
+            snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER \
+              --private-key-path "$SNOWSQL_PRIVATE_KEY_PATH" \
+              --private-key-passphrase "$SNOWSQL_PRIVATE_KEY_PASSPHRASE" \
+              -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE \
               -f "$sql_file"
           done
 
-      # Step 6: Deployment confirmation
+      # Step 5: Deployment confirmation
       - name: Deployment Status
         run: echo "CI/CD pipeline completed successfully."
