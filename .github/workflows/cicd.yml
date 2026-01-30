@@ -10,14 +10,10 @@ on:
 jobs:
   ci-cd:
     runs-on: ubuntu-latest
-    name: Run SQL CI/CD on Snowflake
-
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout Repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      # Step 2: Verify SQL files exist
       - name: Verify SQL files
         run: |
           if [ ! -f cleaning.sql ]; then
@@ -28,29 +24,14 @@ jobs:
             echo "ERROR: profiling.sql not found!"
             exit 1
           fi
-          echo "All SQL files exist."
 
-     # Step 3: Install SnowSQL
-      
-      - name: Install SnowSQL
+      - name: Install SnowSQL CLI
         run: |
-                python3 -m pip install --upgrade pip
-                pip install snowflake-cli
-                snowsql -v
-                echo "$HOME/.local/bin" >> $GITHUB_PATH
-                snowsql -v
+          python3 -m pip install --upgrade pip
+          pip install snowflake-cli
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      
-
-
-
-      # Step 4: Verify SnowSQL Works
-      - name: Check SnowSQL Version
-        run: snowsql -v
-
-
-      # Step 4: Run SQL scripts on Snowflake
-      - name: Execute SQL Scripts
+      - name: Run SQL scripts
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
@@ -58,14 +39,8 @@ jobs:
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
         run: |
-          echo "Running cleaning.sql..."
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
             -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f cleaning.sql
-          
-          echo "Running profiling.sql..."
           snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
             -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f profiling.sql
 
-      # Step 5: Deployment confirmation
-      - name: Deployment Status
-        run: echo "CI/CD pipeline completed successfully."
