@@ -10,28 +10,38 @@ on:
 jobs:
   ci-cd:
     runs-on: ubuntu-latest
+    name: Run SQL CI/CD on Snowflake
+
     steps:
-      - name: Checkout repo
+      # Step 1: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # Step 2: Verify SQL files exist
       - name: Verify SQL files
         run: |
-          if [ ! -f cleaning.sql ]; then
-            echo "ERROR: cleaning.sql not found!"
-            exit 1
-          fi
-          if [ ! -f profiling.sql ]; then
-            echo "ERROR: profiling.sql not found!"
+          if ls *.sql 1> /dev/null 2>&1; then
+            echo "SQL files found:"
+            ls *.sql
+          else
+            echo "ERROR: No SQL files found!"
             exit 1
           fi
 
+      # Step 3: Install SnowSQL CLI via pip
       - name: Install SnowSQL CLI
         run: |
           python3 -m pip install --upgrade pip
           pip install snowflake-cli
+          # Add SnowSQL to PATH for all next steps
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Execute all SQL scripts
+      # Step 4: Verify SnowSQL Installation
+      - name: Verify SnowSQL
+        run: snowsql -v
+
+      # Step 5: Execute all SQL scripts dynamically
+      - name: Execute SQL Scripts
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
@@ -44,3 +54,7 @@ jobs:
             snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
               -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f "$sql_file"
           done
+
+      # Step 6: Deployment confirmation
+      - name: Deployment Status
+        run: echo "CI/CD pipeline completed successfully."
