@@ -37,6 +37,11 @@ jobs:
                 python3 -m pip install --upgrade pip
                 pip install snowflake-cli
                 snowsql -v
+                echo "$HOME/.local/bin" >> $GITHUB_PATH
+                snowsql -v
+
+      
+
 
 
       # Step 4: Verify SnowSQL Works
