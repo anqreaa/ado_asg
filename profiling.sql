@@ -218,3 +218,94 @@ FROM SERVICES
 GROUP BY HADM_ID
 ORDER BY service_count DESC;
 ;
+
+SELECT
+    COUNT(*) AS total_rows,
+    COUNT(DISTINCT ROW_ID) AS unique_row_id,
+    COUNT(DISTINCT ICD9_CODE) AS unique_icd9_code,
+    COUNT(DISTINCT SHORT_TITLE) AS unique_short_title,
+    COUNT(DISTINCT LONG_TITLE) AS unique_long_title
+FROM DIAGNOSES;
+
+SELECT
+    SUM(CASE WHEN ROW_ID IS NULL THEN 1 ELSE 0 END) AS null_row_id,
+    SUM(CASE WHEN ICD9_CODE IS NULL OR TRIM(ICD9_CODE) = '' THEN 1 ELSE 0 END) AS missing_icd9_code,
+    SUM(CASE WHEN SHORT_TITLE IS NULL OR TRIM(SHORT_TITLE) = '' THEN 1 ELSE 0 END) AS missing_short_title,
+    SUM(CASE WHEN LONG_TITLE IS NULL OR TRIM(LONG_TITLE) = '' THEN 1 ELSE 0 END) AS missing_long_title
+FROM DIAGNOSES;
+
+SELECT
+    MIN(LENGTH(SHORT_TITLE)) AS min_short_len,
+    MAX(LENGTH(SHORT_TITLE)) AS max_short_len,
+    AVG(LENGTH(SHORT_TITLE)) AS avg_short_len,
+    MIN(LENGTH(LONG_TITLE)) AS min_long_len,
+    MAX(LENGTH(LONG_TITLE)) AS max_long_len,
+    AVG(LENGTH(LONG_TITLE)) AS avg_long_len
+FROM DIAGNOSES
+WHERE SHORT_TITLE IS NOT NULL AND LONG_TITLE IS NOT NULL;
+
+SELECT
+    COUNT(*) AS total_rows,
+    COUNT(DISTINCT ICD9_CODE) AS distinct_icd9_codes,
+    ROUND(COUNT(*) / COUNT(DISTINCT ICD9_CODE), 2) AS avg_rows_per_code
+FROM PROCEDURES;
+
+--data profiling procedures
+
+SELECT
+    COUNT(*) AS total_rows,
+    COUNT(DISTINCT ROW_ID) AS unique_row_id,
+    COUNT(DISTINCT ICD9_CODE) AS unique_icd9_code,
+    COUNT(DISTINCT SHORT_TITLE) AS unique_short_title,
+    COUNT(DISTINCT LONG_TITLE) AS unique_long_title
+FROM PROCEDURES;
+
+SELECT
+    SUM(CASE WHEN ROW_ID IS NULL THEN 1 ELSE 0 END) AS null_row_id,
+    SUM(CASE WHEN ICD9_CODE IS NULL THEN 1 ELSE 0 END) AS null_icd9_code,
+    SUM(CASE WHEN SHORT_TITLE IS NULL OR TRIM(SHORT_TITLE) = '' THEN 1 ELSE 0 END) AS missing_short_title,
+    SUM(CASE WHEN LONG_TITLE IS NULL OR TRIM(LONG_TITLE) = '' THEN 1 ELSE 0 END) AS missing_long_title
+FROM PROCEDURES;
+
+SELECT ICD9_ID, COUNT(*) AS duplicate_count
+FROM PROCEDURES
+GROUP BY ICD9_ID
+HAVING COUNT(*) > 1;
+
+SELECT ICD9_CODE, COUNT(*) AS duplicate_count
+FROM PROCEDURES
+GROUP BY ICD9_CODE
+HAVING COUNT(*) > 1;
+SELECT
+    MIN(LENGTH(SHORT_TITLE)) AS min_short_len,
+    MAX(LENGTH(SHORT_TITLE)) AS max_short_len,
+    AVG(LENGTH(SHORT_TITLE)) AS avg_short_len,
+    MIN(LENGTH(LONG_TITLE)) AS min_long_len,
+    MAX(LENGTH(LONG_TITLE)) AS max_long_len,
+    AVG(LENGTH(LONG_TITLE)) AS avg_long_len
+FROM PROCEDURES;
+
+SELECT
+    'ROW_ID' AS column_name,
+    COUNT(*) AS total_rows,
+    COUNT(DISTINCT ROW_ID) AS distinct_values,
+    SUM(CASE WHEN ROW_ID IS NULL THEN 1 ELSE 0 END) AS null_count
+FROM PROCEDURES
+
+UNION ALL
+
+SELECT
+    'ICD9_CODE' AS column_name,
+    COUNT(*) AS total_rows,
+    COUNT(DISTINCT ICD9_CODE) AS distinct_values,
+    SUM(CASE WHEN ICD9_CODE IS NULL THEN 1 ELSE 0 END) AS null_count
+FROM PROCEDURES;
+
+
+SELECT
+    COUNT(*) AS total_rows,
+    COUNT(DISTINCT ROW_ID) AS distinct_row_id,
+    COUNT(DISTINCT ICD9_CODE) AS distinct_icd9_code,
+    ROUND(COUNT(DISTINCT ICD9_CODE) / COUNT(*) * 100, 2) AS icd9_uniqueness_pct,
+    ROUND(COUNT(*) / COUNT(DISTINCT ICD9_CODE), 2) AS avg_rows_per_code
+FROM PROCEDURES;
