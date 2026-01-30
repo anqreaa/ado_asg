@@ -28,19 +28,22 @@ jobs:
             exit 1
           fi
 
-      # Step 3: Install SnowSQL CLI via pip and set PATH
-      - name: Install SnowSQL CLI
+      # Step 3: Install SnowSQL (OFFICIAL installer)
+      - name: Install SnowSQL
         run: |
-          python3 -m pip install --upgrade pip
-          pip install snowflake-cli
-          # Add SnowSQL to PATH for all next steps
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.31-linux_x86_64.tar.gz
+          tar -xzf snowsql-1.2.31-linux_x86_64.tar.gz
+          sudo mkdir -p /usr/local/snowsql
+          sudo mv snowsql-1.2.31-linux_x86_64/* /usr/local/snowsql
+          sudo ln -s /usr/local/snowsql/snowsql /usr/local/bin/snowsql
 
-      # Step 4: Verify SnowSQL installation (next step after PATH update)
+      # Step 4: Verify SnowSQL installation
       - name: Verify SnowSQL
-        run: snowsql -v
+        run: |
+          which snowsql
+          snowsql -v
 
-      # Step 5: Execute all SQL scripts dynamically
+      # Step 5: Execute all SQL scripts
       - name: Execute SQL Scripts
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
@@ -51,8 +54,14 @@ jobs:
         run: |
           for sql_file in *.sql; do
             echo "Running $sql_file..."
-            snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
-              -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f "$sql_file"
+            snowsql \
+              -a "$SNOWSQL_ACCOUNT" \
+              -u "$SNOWSQL_USER" \
+              -p "$SNOWSQL_PWD" \
+              -r "$SNOWSQL_ROLE" \
+              -w "$SNOWSQL_WAREHOUSE" \
+              -o exit_on_error=true \
+              -f "$sql_file"
           done
 
       # Step 6: Deployment confirmation
