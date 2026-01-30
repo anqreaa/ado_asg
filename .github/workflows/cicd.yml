@@ -31,7 +31,7 @@ jobs:
           pip install snowflake-cli
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      - name: Run SQL scripts
+      - name: Execute all SQL scripts
         env:
           SNOWSQL_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
           SNOWSQL_USER: ${{ secrets.SNOWFLAKE_USER }}
@@ -39,8 +39,8 @@ jobs:
           SNOWSQL_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
           SNOWSQL_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
         run: |
-          snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
-            -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f cleaning.sql
-          snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
-            -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f profiling.sql
-
+          for sql_file in *.sql; do
+            echo "Running $sql_file..."
+            snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -p $SNOWSQL_PWD \
+              -r $SNOWSQL_ROLE -w $SNOWSQL_WAREHOUSE -f "$sql_file"
+          done
