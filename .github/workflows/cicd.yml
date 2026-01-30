@@ -28,7 +28,7 @@ jobs:
             exit 1
           fi
 
-      # Step 3: Install SnowSQL CLI via pip
+      # Step 3: Install SnowSQL CLI via pip and set PATH
       - name: Install SnowSQL CLI
         run: |
           python3 -m pip install --upgrade pip
@@ -36,7 +36,7 @@ jobs:
           # Add SnowSQL to PATH for all next steps
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # Step 4: Verify SnowSQL Installation
+      # Step 4: Verify SnowSQL installation (next step after PATH update)
       - name: Verify SnowSQL
         run: snowsql -v
 
