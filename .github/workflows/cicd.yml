@@ -25,9 +25,7 @@ jobs:
           # Add SnowSQL to PATH for future steps
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-      # Step 3: Verify SnowSQL installation
-      - name: Verify SnowSQL
-        run: snowsql -v
+      
 
       # Step 4: Execute all SQL scripts dynamically using key-pair login
       - name: Run SQL Scripts on Snowflake
