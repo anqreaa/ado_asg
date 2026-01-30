@@ -31,10 +31,13 @@ jobs:
           echo "All SQL files exist."
 
      # Step 3: Install SnowSQL
+      
       - name: Install SnowSQL
         run: |
-              curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/latest/linux_x86_64/snowsql-linux_x86_64.bash
-              bash snowsql-linux_x86_64.bash
+                python3 -m pip install --upgrade pip
+                pip install snowflake-cli
+                snowsql -v
+
 
       # Step 4: Verify SnowSQL Works
       - name: Check SnowSQL Version
