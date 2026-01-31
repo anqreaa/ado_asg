@@ -6,6 +6,183 @@ USE WAREHOUSE BISON_WH;
 USE DATABASE GRP5_ASG;
 USE SCHEMA GRP5_ASG.STAGING;
 
+-- ADMISSIONS
+SELECT DISTINCT insurance
+FROM STAGING.admissions_clean;
+
+SELECT DISTINCT religion
+FROM STAGING.admissions_clean;
+
+SELECT DISTINCT marital_status
+FROM STAGING.admissions_clean;
+
+SELECT DISTINCT discharge_location
+FROM STAGING.admissions_clean;
+
+SELECT DISTINCT ethnicity
+FROM STAGING.admissions_clean;
+
+SELECT DISTINCT language
+FROM STAGING.admissions_clean;
+
+
+CREATE OR REPLACE TABLE STAGING.admissions_clean AS
+SELECT 
+    row_id,
+    subject_id,
+    hadm_id,
+    admittime,
+    dischtime,
+    deathtime,
+    admission_type,
+    admission_location,
+
+    -- Standardize discharge location
+    CASE 
+        WHEN discharge_location LIKE '%DEAD/EXPIRED%' THEN 'DEAD'
+        ELSE UPPER(discharge_location)
+    END AS discharge_location,
+    -- Standardize insurance
+    CASE 
+        WHEN insurance IS NULL THEN 'UNKNOWN'
+        ELSE UPPER(insurance)
+    END AS insurance,
+    -- Standardize language
+    CASE 
+        WHEN language IS NULL THEN 'UNKNOWN'
+        ELSE UPPER(TRIM(LANGUAGE))
+    END AS language,
+    -- Standardize religion
+    CASE 
+        WHEN religion LIKE '%UNOBTAINABLE%' OR religion LIKE '%NOT SPECIFIED%' THEN 'UNKNOWN'
+        WHEN religion IS NULL THEN 'UNKNOWN'
+        ELSE UPPER(TRIM(religion))
+    END AS religion,
+    -- Standardize marital status
+    CASE 
+        WHEN marital_status LIKE '%UNKNOWN%' OR marital_status IS NULL THEN 'UNKNOWN'
+        ELSE UPPER(TRIM(marital_status))
+    END AS marital_status,
+    -- Standardize ethnicity
+    CASE 
+        WHEN ethnicity LIKE '%HISPANIC%' OR ethnicity LIKE '%LATINO%' THEN 'HISPANIC/LATINO'
+        WHEN ethnicity LIKE '%BLACK%' OR ethnicity LIKE '%AFRICAN%' THEN 'BLACK/AFRICAN AMERICAN'
+        WHEN ethnicity LIKE '%ASIAN%' THEN 'ASIAN'
+        WHEN ethnicity LIKE '%WHITE%' THEN 'WHITE'
+        WHEN ethnicity LIKE '%AMERICAN INDIAN%' OR ethnicity LIKE '%ALASKA NATIVE%' THEN 'AMERICAN INDIAN/ALASKA NATIVE'
+        WHEN ethnicity IN ('UNABLE TO OBTAIN', 'UNKNOWN/NOT SPECIFIED') THEN 'UNKNOWN'
+        WHEN ethnicity = 'OTHER' THEN 'OTHER'
+        ELSE 'UNKNOWN'
+    END AS ethnicity,
+    edregtime,
+    edouttime,
+    diagnosis,
+    hospital_expire_flag,
+    has_chartevents_data
+FROM RAW.admissions;
+
+
+SELECT * 
+FROM STAGING.admissions_clean
+LIMIT 10;
+
+
+GRP5_ASG.STAGING.ADMISSIONS_CLEAN
+LIMIT 10;
+
+-- after data has been finalised
+CREATE OR REPLACE TABLE CLEAN.ADMISSIONS AS
+SELECT * FROM STAGING.admissions_clean;
+
+-- data foreign key check
+SELECT 
+    a.subject_id,
+    COUNT(*) AS admission_count
+FROM admissions a
+LEFT JOIN patients p
+    ON a.subject_id = p.subject_id
+WHERE p.subject_id IS NULL
+GROUP BY a.subject_id;
+
+
+-- PATIENTS
+PATIENT CLEAN
+-- See first 10 rows
+SELECT * 
+FROM STAGING.patients_clean
+LIMIT 10;
+
+-- Find cases where dates don't match
+SELECT * 
+FROM STAGING.patients_clean
+   WHERE dod != dod_hosp OR dod != dod_ssn;
+
+CREATE OR REPLACE TABLE STAGING.PATIENTS_CLEAN AS
+SELECT * EXCLUDE (dod_hosp, dod_ssn)
+FROM RAW.patients;
+
+CREATE OR REPLACE TABLE CLEAN.PATIENTS AS
+SELECT *
+FROM STAGING.patients_clean;
+
+
+SELECT * 
+FROM CLEAN.patients
+LIMIT 10;
+
+-- TRANSFERS
+SELECT * 
+FROM STAGING.transfers_clean
+LIMIT 10;
+
+-- Find and review records where outtime < intime
+SELECT *
+FROM STAGING.transfers_clean
+WHERE outtime < intime;
+
+-- capitalise the text data to standardise with the other tables
+UPDATE STAGING.TRANSFERS_CLEAN
+SET 
+    dbsource = UPPER(TRIM(dbsource)),
+    eventtype = UPPER(TRIM(eventtype)),
+    prev_careunit = UPPER(TRIM(prev_careunit)),
+    curr_careunit = UPPER(TRIM(curr_careunit));
+
+
+
+
+CREATE OR REPLACE TABLE CLEAN.TRANSFERS AS
+SELECT *
+FROM STAGING.transfers_clean;
+
+
+-- check for foreign key
+-- 1) Check orphan SUBJECT_IDs in TRANSFERS (should be 0)
+SELECT t.subject_id, COUNT(*) AS transfer_rows
+FROM transfers t
+LEFT JOIN patients p
+  ON t.subject_id = p.subject_id
+WHERE p.subject_id IS NULL
+GROUP BY t.subject_id;
+
+-- 2) Check orphan HADM_IDs in TRANSFERS (should be 0 if not null)
+SELECT t.hadm_id, COUNT(*) AS transfer_rows
+FROM transfers t
+LEFT JOIN admissions a
+  ON t.hadm_id = a.hadm_id
+WHERE t.hadm_id IS NOT NULL
+  AND a.hadm_id IS NULL
+GROUP BY t.hadm_id;
+
+-- 3) Check orphan ICUSTAY_IDs in TRANSFERS (often some can be null)
+SELECT t.icustay_id, COUNT(*) AS transfer_rows
+FROM transfers t
+LEFT JOIN icustays i
+  ON t.icustay_id = i.icustay_id
+WHERE t.icustay_id IS NOT NULL
+  AND i.icustay_id IS NULL
+GROUP BY t.icustay_id;
+
 --CHARTEVENTS
 CREATE OR REPLACE TABLE CHARTEVENTS_CLEAN AS
 SELECT
@@ -368,5 +545,6 @@ SELECT
     VALUE,
     VALUEUOM
 FROM GRP5_ASG.STAGING.PROCEDUREEVENTS_MV_CLEAN;
+
 
 
