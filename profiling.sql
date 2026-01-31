@@ -7,6 +7,255 @@ USE WAREHOUSE BISON_WH;
 USE DATABASE GRP5_ASG;
 USE SCHEMA GRP5_ASG.RAW;
 
+-- ADMISSIONS
+CREATE OR REPLACE TABLE STAGING.ADMISSIONS_CLEAN AS
+SELECT * FROM RAW.admissions;
+
+
+-- See first 10 rows
+SELECT * 
+FROM STAGING.admissions_clean
+LIMIT 10;
+
+-- Check row count
+SELECT COUNT(*) 
+FROM STAGING.admissions_clean;
+
+-- See the structure
+DESCRIBE TABLE STAGING.admissions_clean;
+
+-- Counts the number of null for each value
+SELECT
+    COUNT(*) - COUNT(row_id) as row_id_nulls,
+    COUNT(*) - COUNT(subject_id) as subject_id_nulls,
+    COUNT(*) - COUNT(hadm_id) as hadm_id_nulls,
+    COUNT(*) - COUNT(admittime) as admittime_nulls,
+    COUNT(*) - COUNT(dischtime) as dischtime_nulls,
+    COUNT(*) - COUNT(deathtime) as deathtime_nulls,
+    COUNT(*) - COUNT(admission_type) as admission_type_nulls,
+    COUNT(*) - COUNT(admission_location) as admission_location_nulls,
+    COUNT(*) - COUNT(discharge_location) as discharge_location_nulls,
+    COUNT(*) - COUNT(insurance) as insurance_nulls,
+    COUNT(*) - COUNT(language) as language_nulls,
+    COUNT(*) - COUNT(religion) as religion_nulls,
+    COUNT(*) - COUNT(marital_status) as marital_status_nulls,
+    COUNT(*) - COUNT(ethnicity) as ethnicity_nulls,
+    COUNT(*) - COUNT(edregtime) as edregtime_nulls,
+    COUNT(*) - COUNT(edouttime) as edouttime_nulls,
+    COUNT(*) - COUNT(diagnosis) as diagnosis_nulls,
+    COUNT(*) - COUNT(hospital_expire_flag) as hospital_expire_flag_nulls,
+    COUNT(*) - COUNT(has_chartevents_data) as has_chartevents_data_nulls
+FROM STAGING.admissions_clean;
+
+-- Shows the number of distinct values for each record
+SELECT 
+    COUNT(DISTINCT row_id) as row_id_distinct,
+    COUNT(DISTINCT subject_id) as subject_id_distinct,
+    COUNT(DISTINCT hadm_id) as hadm_id_distinct,
+    COUNT(DISTINCT admittime) as admittime_distinct,
+    COUNT(DISTINCT dischtime) as dischtime_distinct,
+    COUNT(DISTINCT deathtime) as deathtime_distinct,
+    COUNT(DISTINCT admission_type) as admission_type_distinct,
+    COUNT(DISTINCT admission_location) as admission_location_distinct,
+    COUNT(DISTINCT discharge_location) as discharge_location_distinct,
+    COUNT(DISTINCT insurance) as insurance_distinct,
+    COUNT(DISTINCT language) as language_distinct,
+    COUNT(DISTINCT religion) as religion_distinct,
+    COUNT(DISTINCT marital_status) as marital_status_distinct,
+    COUNT(DISTINCT ethnicity) as ethnicity_distinct,
+    COUNT(DISTINCT edregtime) as edregtime_distinct,
+    COUNT(DISTINCT edouttime) as edouttime_distinct,
+    COUNT(DISTINCT diagnosis) as diagnosis_distinct,
+    COUNT(DISTINCT hospital_expire_flag) as hospital_expire_flag_distinct,
+    COUNT(DISTINCT has_chartevents_data) as has_chartevents_data_distinct
+FROM STAGING.admissions_clean;
+
+-- confirm the primary key
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT row_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS row_id_check
+FROM STAGING.admissions_clean;
+
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT hadm_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS row_id_check
+FROM STAGING.admissions_clean;
+
+-- PATIENTS
+-- Create a new table in STAGING that you can edit
+CREATE OR REPLACE TABLE STAGING.PATIENTS_CLEAN AS
+SELECT * FROM RAW.patients;
+
+
+-- See first 10 rows
+SELECT * 
+FROM STAGING.patients_clean
+LIMIT 10;
+
+-- Check row count
+SELECT COUNT(*) 
+FROM STAGING.patients_clean;
+
+-- See the structure
+DESCRIBE TABLE STAGING.patients_clean;
+
+-- Counts the number of null for each value
+SELECT
+    COUNT(*) - COUNT(row_id) as row_id_nulls,
+    COUNT(*) - COUNT(subject_id) as subject_id_nulls,
+    COUNT(*) - COUNT(gender) as gender_nulls,
+    COUNT(*) - COUNT(dob) as dob_nulls,
+    COUNT(*) - COUNT(dod) as dod_nulls,
+    COUNT(*) - COUNT(dod_hosp) as dod_hosp_nulls,
+    COUNT(*) - COUNT(dod_ssn) as dod_ssn_nulls,
+    COUNT(*) - COUNT(expire_flag) as expire_flag_nulls
+FROM STAGING.patients_clean;
+
+-- Shows the number of distinct values for each record
+SELECT 
+    COUNT(DISTINCT row_id) as row_id_distinct,
+    COUNT(DISTINCT subject_id) as subject_id_distinct,
+    COUNT(DISTINCT gender) as gender_distinct,
+    COUNT(DISTINCT dob) as dob_distinct,
+    COUNT(DISTINCT dod) as dod_distinct,
+    COUNT(DISTINCT dod_hosp) as dod_hosp_distinct,
+    COUNT(DISTINCT dod_ssn) as dod_ssn_distinct,
+    COUNT(DISTINCT expire_flag) as expire_flag_distinct
+FROM STAGING.patients_clean;
+
+-- confirm the primary key
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT row_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS row_id_check
+FROM STAGING.patients_clean;
+
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT subject_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS row_id_check
+FROM STAGING.patients_clean;
+
+-- TRANSFERS
+
+CREATE OR REPLACE TABLE STAGING.TRANSFERS_CLEAN AS
+SELECT * FROM RAW.transfers;
+
+-- See first 10 rows
+SELECT * 
+FROM STAGING.transfers_clean
+LIMIT 10;
+
+-- Check row count
+SELECT COUNT(*) 
+FROM STAGING.transfers_clean;
+
+-- See the structure
+DESCRIBE TABLE STAGING.transfers_clean;
+
+-- Counts the number of null for each value
+SELECT
+    COUNT(*) - COUNT(row_id) as row_id_nulls,
+    COUNT(*) - COUNT(subject_id) as subject_id_nulls,
+    COUNT(*) - COUNT(hadm_id) as hadm_id_nulls,
+    COUNT(*) - COUNT(icustay_id) as icustay_id_nulls,
+    COUNT(*) - COUNT(dbsource) as dbsource_nulls,
+    COUNT(*) - COUNT(eventtype) as eventtype_nulls,
+    COUNT(*) - COUNT(prev_careunit) as prev_careunit_nulls,
+    COUNT(*) - COUNT(curr_careunit) as curr_careunit_nulls,
+    COUNT(*) - COUNT(prev_wardid) as prev_wardid_nulls,
+    COUNT(*) - COUNT(curr_wardid) as curr_wardid_nulls,
+    COUNT(*) - COUNT(intime) as intime_nulls,
+    COUNT(*) - COUNT(outtime) as outtime_nulls,
+    COUNT(*) - COUNT(los) as los_nulls
+FROM STAGING.transfers_clean;
+
+-- How many transfers per patient?
+SELECT 
+    subject_id,
+    COUNT(*) as transfer_count
+FROM STAGING.transfers_clean
+GROUP BY subject_id
+ORDER BY transfer_count DESC;
+
+-- ROW_ID should be unique (one per transfer event)
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT row_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS primary_key_check,
+    COUNT(*) as total_rows,
+    COUNT(DISTINCT row_id) as unique_row_ids
+FROM STAGING.transfers_clean;
+
+-- ROW_ID should be unique (one per transfer event)
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT subject_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS primary_key_check,
+    COUNT(*) as total_rows,
+    COUNT(DISTINCT row_id) as unique_row_ids
+FROM STAGING.transfers_clean;
+
+-- ROW_ID should be unique (one per transfer event)
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT hadm_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS primary_key_check,
+    COUNT(*) as total_rows,
+    COUNT(DISTINCT row_id) as unique_row_ids
+FROM STAGING.transfers_clean;
+
+-- Shows the number of distinct values for each record
+SELECT 
+    COUNT(DISTINCT row_id) as row_id_distinct,
+    COUNT(DISTINCT subject_id) as subject_id_distinct,
+    COUNT(DISTINCT hadm_id) as hadm_id_distinct,
+    COUNT(DISTINCT icustay_id) as icustay_id_distinct,
+    COUNT(DISTINCT dbsource) as dbsource_distinct,
+    COUNT(DISTINCT eventtype) as eventtype_distinct,
+    COUNT(DISTINCT prev_careunit) as prev_careunit_distinct,
+    COUNT(DISTINCT curr_careunit) as curr_careunit_distinct,
+    COUNT(DISTINCT prev_wardid) as prev_wardid_distinct,
+    COUNT(DISTINCT curr_wardid) as curr_wardid_distinct,
+    COUNT(DISTINCT intime) as intime_distinct,
+    COUNT(DISTINCT outtime) as outtime_distinct,
+    COUNT(DISTINCT los) as los_distinct
+FROM STAGING.transfers_clean;
+
+-- Confirm the primary key
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT row_id) 
+        THEN 'ROW_ID is unique' 
+        ELSE 'ROW_ID has duplicates' 
+    END AS row_id_check
+FROM STAGING.transfers_clean;
+
+SELECT 
+    CASE 
+        WHEN COUNT(*) = COUNT(DISTINCT icustay_id) 
+        THEN 'ICUSTAY_ID is unique' 
+        ELSE 'ICUSTAY_ID has duplicates' 
+    END AS icustay_id_check
+FROM STAGING.transfers_clean;
+
+
 --DIAGNOSES_ICD
 SELECT
     COUNT(*) AS total_rows,
@@ -608,3 +857,4 @@ WHERE NOT EXISTS (
 -- suspend warehouse when not in use 
 ALTER WAREHOUSE CHIPMUNK_WH
 SUSPEND;
+
