@@ -1,3 +1,7 @@
+-------------------
+-- DATA PROFILING
+-------------------
+
 USE ROLE TRAINING_ROLE;
 USE WAREHOUSE BISON_WH;
 USE DATABASE GRP5_ASG;
@@ -309,3 +313,174 @@ SELECT
     ROUND(COUNT(DISTINCT ICD9_CODE) / COUNT(*) * 100, 2) AS icd9_uniqueness_pct,
     ROUND(COUNT(*) / COUNT(DISTINCT ICD9_CODE), 2) AS avg_rows_per_code
 FROM PROCEDURES;
+
+-- set context
+USE ROLE TRAINING_ROLE;
+USE WAREHOUSE BULLFROG_WH;
+USE DATABASE GRP5_ASG;
+USE SCHEMA GRP5_ASG.STAGING;
+
+CREATE SCHEMA IF NOT EXISTS STAGING;
+--------------
+-- ICUSTAYS
+--------------
+
+-- row count
+SELECT COUNT(*) FROM RAW.ICUSTAYS;
+
+-- check for null
+SELECT
+  COUNT_IF(ICUSTAY_ID IS NULL) AS null_icustay,
+  COUNT_IF(INTIME IS NULL) AS null_intime,
+  COUNT_IF(OUTTIME IS NULL) AS null_outtime
+FROM RAW.ICUSTAYS;
+
+-- logical checks
+SELECT *
+FROM RAW.ICUSTAYS
+WHERE OUTTIME < INTIME;=
+
+-- surrogate pk check row_id
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(DISTINCT ROW_ID) AS distinct_row_id,
+  SUM(IFF(ROW_ID IS NULL, 1, 0)) AS null_row_id,
+  IFF(COUNT(*) = COUNT(DISTINCT ROW_ID) AND SUM(IFF(ROW_ID IS NULL,1,0)) = 0, 'YES', 'NO') AS row_id_is_unique_nonnull
+FROM RAW.ICUSTAYS;
+
+-- icustay_id
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(DISTINCT ICUSTAY_ID) AS distinct_icustay_id,
+  SUM(IFF(ICUSTAY_ID IS NULL, 1, 0)) AS null_icustay_id,
+  IFF(COUNT(*) = COUNT(DISTINCT ICUSTAY_ID) AND SUM(IFF(ICUSTAY_ID IS NULL,1,0)) = 0, 'YES', 'NO') AS icustay_id_is_unique_nonnull
+FROM RAW.ICUSTAYS;
+
+-- subject_id cardinality (many icu stays per patient)
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(DISTINCT SUBJECT_ID) AS distinct_subject_id,
+  SUM(IFF(SUBJECT_ID IS NULL, 1, 0)) AS null_subject_id,
+  (COUNT(*) * 1.0) / NULLIF(COUNT(DISTINCT SUBJECT_ID), 0) AS avg_rows_per_subject
+FROM RAW.ICUSTAYS;
+
+-- check for orphan subject_id (0 orphan rows=perfect fk)
+SELECT
+  COUNT(*) AS orphan_subject_ids
+FROM RAW.ICUSTAYS i
+LEFT JOIN RAW.PATIENTS p
+  ON i.SUBJECT_ID = p.SUBJECT_ID
+WHERE p.SUBJECT_ID IS NULL;
+
+-- check for orphan hadm_id
+SELECT
+  COUNT(*) AS orphan_hadm_ids
+FROM RAW.ICUSTAYS i
+LEFT JOIN RAW.ADMISSIONS a
+  ON i.HADM_ID = a.HADM_ID
+WHERE i.HADM_ID IS NOT NULL
+  AND a.HADM_ID IS NULL;
+
+-------------------
+-- PROCEDURES_ICD
+-------------------
+
+-- row count
+SELECT COUNT(*) AS total_rows
+FROM RAW.PROCEDURES_ICD;
+
+-- check for null
+SELECT
+  COUNT_IF(SUBJECT_ID IS NULL) AS null_subject_id,
+  COUNT_IF(HADM_ID IS NULL) AS null_hadm_id,
+  COUNT_IF(ICD9_CODE IS NULL) AS null_icd9_code
+FROM RAW.PROCEDURES_ICD;
+
+-- check for duplicates
+SELECT
+  SUBJECT_ID,
+  HADM_ID,
+  ICD9_CODE,
+  COUNT(*) AS duplicate_count
+FROM RAW.PROCEDURES_ICD
+GROUP BY SUBJECT_ID, HADM_ID, ICD9_CODE
+HAVING COUNT(*) > 1;
+
+-- surrogate pk check
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(DISTINCT ROW_ID) AS distinct_row_id,
+  SUM(IFF(ROW_ID IS NULL, 1, 0)) AS null_row_id,
+  IFF(COUNT(*) = COUNT(DISTINCT ROW_ID) AND SUM(IFF(ROW_ID IS NULL,1,0)) = 0, 'YES', 'NO') AS row_id_is_unique_nonnull
+FROM RAW.PROCEDURES_ICD;
+
+-- subject id fk
+SELECT
+  COUNT(*) AS orphan_subject_ids
+FROM RAW.PROCEDURES_ICD i
+LEFT JOIN RAW.PATIENTS p
+  ON i.SUBJECT_ID = p.SUBJECT_ID
+WHERE p.SUBJECT_ID IS NULL;
+
+-- hadm id fk
+SELECT
+  COUNT(*) AS orphan_hadm_ids
+FROM RAW.PROCEDURES_ICD i
+LEFT JOIN RAW.ADMISSIONS a
+  ON i.HADM_ID = a.HADM_ID
+WHERE i.HADM_ID IS NOT NULL
+  AND a.HADM_ID IS NULL;
+  
+------------
+-- CALLOUT
+------------
+-- row count
+SELECT COUNT(*) AS total_rows
+FROM RAW.CALLOUT;
+
+-- check for null
+SELECT
+  COUNT_IF(SUBJECT_ID IS NULL) AS null_subject_id,
+  COUNT_IF(HADM_ID IS NULL) AS null_hadm_id,
+  COUNT_IF(CALLOUT_STATUS IS NULL) AS null_callout_status,
+  COUNT_IF(CREATETIME IS NULL) AS null_createtime
+FROM RAW.CALLOUT;
+
+-- logical check 
+SELECT *
+FROM RAW.CALLOUT
+WHERE UPDATETIME < CREATETIME;
+
+SELECT CALLOUT_STATUS, CALLOUT_OUTCOME, COUNT(*) AS count
+FROM RAW.CALLOUT
+GROUP BY CALLOUT_STATUS, CALLOUT_OUTCOME
+ORDER BY count DESC;
+
+-- surrogate pk check
+SELECT
+  COUNT(*) AS total_rows,
+  COUNT(DISTINCT ROW_ID) AS distinct_row_id,
+  SUM(IFF(ROW_ID IS NULL, 1, 0)) AS null_row_id,
+  IFF(COUNT(*) = COUNT(DISTINCT ROW_ID) AND SUM(IFF(ROW_ID IS NULL,1,0)) = 0, 'YES', 'NO') AS row_id_is_unique_nonnull
+FROM RAW.CALLOUT;
+
+-- subject id fk
+SELECT
+  COUNT(*) AS orphan_subject_ids
+FROM RAW.CALLOUT c
+LEFT JOIN RAW.PATIENTS p
+  ON c.SUBJECT_ID = p.SUBJECT_ID
+WHERE p.SUBJECT_ID IS NULL;
+
+-- hadm id fk
+SELECT
+  COUNT(*) AS orphan_hadm_ids
+FROM RAW.CALLOUT c
+LEFT JOIN RAW.ADMISSIONS a
+  ON c.HADM_ID = a.HADM_ID
+WHERE c.HADM_ID IS NOT NULL
+  AND a.HADM_ID IS NULL;
+
+-- suspend warehouse when not in use 
+ALTER WAREHOUSE BULLFROG_WH
+SUSPEND;
